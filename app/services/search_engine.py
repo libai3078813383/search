@@ -130,10 +130,7 @@ class ProductSearchEngine:
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
 
-        # 计算分页
-        start = (page - 1) * limit
-        end = start + limit
-        paginated_results = results[start:end]
+
 
         # 构造返回数据
         # products = [
@@ -181,23 +178,27 @@ class ProductSearchEngine:
         #         for pid, score in paginated_results
         #     ]
 
+        # 先根据条件过滤
+        filtered_results = []
         if zone_rule_id:
             # 有 zone_rule_id 时进行过滤
-            products = []
-            for pid, score in paginated_results:
+            for pid, score in results:
                 zone_rule_id_1 = self.products[pid].get('zone_rule_id')
                 if zone_rule_id_1 is None:
                     zone_rule_id_1 = 0
-
-
-                if zone_rule_id_1 == int(zone_rule_id):
-                    products.append(self.products[pid]['spu_id'])
+                if int(zone_rule_id_1) == int(zone_rule_id):
+                    filtered_results.append((pid, score))
         else:
-            # 没有 zone_rule_id 时返回所有结果
-            products = []
-            for pid, score in paginated_results:
-                products.append(self.products[pid]['spu_id'])
-
+            # 没有 zone_rule_id 时保留所有结果
+            filtered_results = results
+        # 对过滤后的结果进行分页
+        start = (page - 1) * limit
+        end = start + limit
+        paginated_results = filtered_results[start:end]
+        # 获取最终的spu_id列表
+        products = []
+        for pid, score in paginated_results:
+            products.append(self.products[pid]['spu_id'])
         return products
 
     def refresh_index(self):
