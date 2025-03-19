@@ -161,6 +161,34 @@ class ProductSearchEngine:
         返回:
             按相关性得分排序的商品列表和总数
         """
+        # 关键词权重配置
+        keyword_weights = {
+            "油": {
+                "食用油": 10,
+                "大豆油": 9,
+                "花生油": 9,
+                "菜籽油": 8,
+                "调和油": 8,
+                "橄榄油": 7,
+                "机油": 2,
+                "润滑油": 2
+            },
+            "米": {
+                "大米": 10,
+                "小米": 9,
+                "糯米": 8,
+                "香米": 8,
+                "稻米": 8,
+                "米粉": 5,
+                "米酒": 4
+            },
+            "面": {
+                "面条": 10,
+                "面粉": 9,
+                "挂面": 8,
+                "方便面": 8
+            }
+        }
         query_tokens = self.preprocess_text(query)
         if not query_tokens:
             query_tokens = [query]
@@ -176,7 +204,21 @@ class ProductSearchEngine:
                 for pid in product_ids:
                     # 对多字词给予更高的权重
                     weight = len(token) if len(token) > 1 else 0.5
-                    scores[pid] += idf * weight
+                    # scores[pid] += idf * weight
+                    scores[pid] = scores[pid] + (idf * weight)
+
+                    # 应用关键词权重
+                    product_name = self.products[pid].get('name', '').lower()
+                    for keyword, weight_dict in keyword_weights.items():
+                        if token == keyword:  # 如果搜索词匹配关键词
+                            # 检查产品名称是否包含权重词
+                            for term, weight_value in weight_dict.items():
+                                if term in product_name:
+                                    scores[pid] *= weight_value
+                                    break
+
+                    scores[pid] += scores[pid]
+
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -201,7 +243,7 @@ class ProductSearchEngine:
         # 获取最终的spu_id列表
         products = []
         for pid, score in paginated_results:
-            products.append(self.products[pid]['spu_id'])
+            products.append({self.products[pid]['spu_id']:score})
 
         return products, len(filtered_results)
 
