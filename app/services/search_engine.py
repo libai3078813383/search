@@ -1,12 +1,13 @@
 import math
 
 import jieba
+import jieba.posseg as pseg
 import numpy as np
 import pymysql
 from collections import defaultdict
 from utils.database import get_db_connection
 from config.config import Config
-
+import re
 
 class ProductSearchEngine:
     def __init__(self):
@@ -57,7 +58,7 @@ class ProductSearchEngine:
             cursor.close()
             conn.close()
 
-    def preprocess_text(self, text):
+    def preprocess_text1(self, text):
         """
         文本预处理
         1. 转换为小写
@@ -75,6 +76,36 @@ class ProductSearchEngine:
             else:
                 expanded_words.append(word)
         return expanded_words
+
+    def preprocess_text(self, text):
+        """
+        文本预处理优化版
+        """
+        # 1. 基础清理
+        text = text.lower().strip()
+
+        # 2. 特殊字符处理
+        text = re.sub(r'[^\w\s]', ' ', text)
+
+        # 3. 分词
+        words = jieba.lcut(text)
+
+        # 4. 停用词过滤
+        words = [w for w in words if w not in Config.STOP_WORDS and len(w.strip()) > 1]
+
+        # 5. 同义词扩展
+        expanded_words = []
+        for word in words:
+            if word in self.synonyms:
+                expanded_words.extend(self.synonyms[word])
+            else:
+                expanded_words.append(word)
+
+        # 6. 词性过滤（可选）
+        words_with_flags = pseg.cut(' '.join(expanded_words))
+        filtered_words = [w.word for w in words_with_flags if w.flag in ['n', 'v', 'a']]
+
+        return filtered_words
 
     def add_product(self, product):
         """
@@ -95,6 +126,9 @@ class ProductSearchEngine:
         for char in name:
             if char not in Config.STOP_WORDS:
                 self.index[char].append(product_id)
+    def test(self,query):
+        query_tokens = self.preprocess_text(query)
+        return query_tokens
 
     def search(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
         """

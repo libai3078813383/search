@@ -333,7 +333,35 @@ def refresh_index():
             'data': None
         }), 500
 
+@search_bp.route('/test', methods=['POST'])
 
+def refresh_test():
+    """
+    刷新搜索索引接口
+    """
+    data = request.get_json()
+    if not data or 'query' not in data:
+        return {
+            'code': 400,
+            'message': '请提供数据',
+            'data': None
+        }, 400
+
+    query = data['query']
+    try:
+        msg = search_engine.test(query)
+        return jsonify({
+            'code': 200,
+            'message': '成功',
+            'msg':msg,
+            'data': None
+        })
+    except Exception as e:
+        return jsonify({
+            'code': 500,
+            'message': f'失败: {str(e)}',
+            'data': None
+        }), 500
 # 错误处理
 @search_bp.errorhandler(404)
 def not_found(error):
