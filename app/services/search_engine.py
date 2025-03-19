@@ -180,6 +180,29 @@ class ProductSearchEngine:
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+        # 先根据条件过滤
+        filtered_results = []
+        if zone_rule_id:
+            # 有 zone_rule_id 时进行过滤
+            for pid, score in results:
+                zone_rule_id_1 = self.products[pid].get('zone_rule_id')
+                if zone_rule_id_1 is None:
+                    zone_rule_id_1 = 0
+                if int(zone_rule_id_1) == int(zone_rule_id):
+                    filtered_results.append((pid, score))
+        else:
+            # 没有 zone_rule_id 时保留所有结果
+            filtered_results = results
+        # 对过滤后的结果进行分页
+        start = (page - 1) * limit
+        end = start + limit
+        paginated_results = filtered_results[start:end]
+        # 获取最终的spu_id列表
+        products = []
+        for pid, score in paginated_results:
+            products.append(self.products[pid]['spu_id'])
+
+        return products, len(filtered_results)
 
 
 
@@ -229,44 +252,23 @@ class ProductSearchEngine:
         #         for pid, score in paginated_results
         #     ]
 
-        # 先根据条件过滤
-        filtered_results = []
-        if zone_rule_id:
-            # 有 zone_rule_id 时进行过滤
-            for pid, score in results:
-                zone_rule_id_1 = self.products[pid].get('zone_rule_id')
-                if zone_rule_id_1 is None:
-                    zone_rule_id_1 = 0
-                if int(zone_rule_id_1) == int(zone_rule_id):
-                    filtered_results.append((pid, score))
-        else:
-            # 没有 zone_rule_id 时保留所有结果
-            filtered_results = results
-        # 对过滤后的结果进行分页
-        start = (page - 1) * limit
-        end = start + limit
-        paginated_results = filtered_results[start:end]
-        # 获取最终的spu_id列表
-        products = []
-        for pid, score in paginated_results:
-            products.append(self.products[pid]['spu_id'])
-
-        return products,len(filtered_results)
-
     def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
         """
         搜索商品
-        使用TF-IDF算法计算相关性得分,并根据词的相关性进行排序
+        使用TF-IDF算法计算相关性得分，并根据关键词权重调整排序
 
         参数:
             query: 搜索查询字符串
-            page: 当前页码
-            limit: 每页数量
-            top_k: 最大结果数
+            page: 当前页码(从1开始)
+            limit: 每页显示数量
+            top_k: 计算的最大结果数量
+            zone_rule_id: 区域规则ID
+
+        返回:
+            按相关性得分排序的商品列表和总数
         """
-        # 定义词的相关性映射关系
-        WORD_RELEVANCE = {
-            # 食用油相关
+        # 关键词权重配置
+        keyword_weights = {
             "油": {
                 "食用油": 10,
                 "大豆油": 9,
@@ -274,22 +276,18 @@ class ProductSearchEngine:
                 "菜籽油": 8,
                 "调和油": 8,
                 "橄榄油": 7,
-                # 其他油类权重较低
                 "机油": 2,
                 "润滑油": 2
             },
-            # 米相关
             "米": {
                 "大米": 10,
                 "小米": 9,
                 "糯米": 8,
                 "香米": 8,
                 "稻米": 8,
-                # 其他含米的词权重较低
                 "米粉": 5,
                 "米酒": 4
             },
-            # 其他词的相关性配置
             "面": {
                 "面条": 10,
                 "面粉": 9,
@@ -310,33 +308,29 @@ class ProductSearchEngine:
             if product_ids:
                 # 计算IDF
                 idf = np.log(len(self.products) / len(product_ids))
-
                 for pid in product_ids:
-                    product = self.products[pid]
-                    product_name = product.get('name', '')
+                    # 基础权重计算
+                    weight = len(token) if len(token) > 1 else 0.5
+                    base_score = idf * weight
 
-                    # 基础分数
-                    base_score = idf * (len(token) if len(token) > 1 else 0.5)
+                    # 应用关键词权重
+                    product_name = self.products[pid].get('name', '').lower()
+                    for keyword, weight_dict in keyword_weights.items():
+                        if token == keyword:  # 如果搜索词匹配关键词
+                            # 检查产品名称是否包含权重词
+                            for term, weight_value in weight_dict.items():
+                                if term in product_name:
+                                    base_score *= weight_value
+                                    break
 
-                    # 根据相关性词典计算额外权重
-                    relevance_weight = 1.0
-                    if token in WORD_RELEVANCE:
-                        # 检查产品名称中是否包含相关性词
-                        for word, weight in WORD_RELEVANCE[token].items():
-                            if word in product_name:
-                                relevance_weight = weight
-                                break
+                    scores[pid] += base_score
 
-                    # 计算最终得分
-                    final_score = base_score * relevance_weight
-                    scores[pid] += final_score
-
-        # 排序并获取结果
+        # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
 
+        # 根据zone_rule_id过滤
         filtered_results = []
         if zone_rule_id:
-            # 有 zone_rule_id 时进行过滤
             for pid, score in results:
                 zone_rule_id_1 = self.products[pid].get('zone_rule_id')
                 if zone_rule_id_1 is None:
@@ -344,12 +338,13 @@ class ProductSearchEngine:
                 if int(zone_rule_id_1) == int(zone_rule_id):
                     filtered_results.append((pid, score))
         else:
-            # 没有 zone_rule_id 时保留所有结果
             filtered_results = results
-        # 对过滤后的结果进行分页
+
+        # 分页处理
         start = (page - 1) * limit
         end = start + limit
         paginated_results = filtered_results[start:end]
+
         # 获取最终的spu_id列表
         products = []
         for pid, score in paginated_results:
