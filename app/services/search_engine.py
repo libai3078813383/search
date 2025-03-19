@@ -58,7 +58,7 @@ class ProductSearchEngine:
             cursor.close()
             conn.close()
 
-    def preprocess_text1(self, text):
+    def preprocess_text(self, text):
         """
         文本预处理
         1. 转换为小写
@@ -77,7 +77,7 @@ class ProductSearchEngine:
                 expanded_words.append(word)
         return expanded_words
 
-    def preprocess_text(self, text):
+    def preprocess_text1(self, text):
         """
         文本预处理优化版
         """
