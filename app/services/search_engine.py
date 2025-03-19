@@ -147,7 +147,7 @@ class ProductSearchEngine:
         query_tokens = self.preprocess_text(query)
         return query_tokens
 
-    def search_test(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
+    def search(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
         """
         搜索商品
         使用TF-IDF算法计算相关性得分
@@ -190,6 +190,7 @@ class ProductSearchEngine:
                     zone_rule_id_1 = 0
                 if int(zone_rule_id_1) == int(zone_rule_id):
                     filtered_results.append((pid, score))
+
         else:
             # 没有 zone_rule_id 时保留所有结果
             filtered_results = results
@@ -252,7 +253,7 @@ class ProductSearchEngine:
         #         for pid, score in paginated_results
         #     ]
 
-    def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
+    def search_test(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
         """
         搜索商品
         使用TF-IDF算法计算相关性得分，并根据关键词权重调整排序
