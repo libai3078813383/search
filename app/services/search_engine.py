@@ -199,7 +199,8 @@ class ProductSearchEngine:
         products = []
         for pid, score in paginated_results:
             products.append(self.products[pid]['spu_id'])
-        return products
+
+        return products,len(filtered_results)
 
     def refresh_index(self):
         """刷新索引"""

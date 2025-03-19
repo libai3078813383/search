@@ -81,7 +81,7 @@ def search_products():
         logger.log_info('搜索接口处理后的参数', search_params)
         # 执行搜索
         try:
-            results = search_engine.search(
+            results,amount = search_engine.search(
                 query=query,
                 limit=limit,
                 top_k=1000,
@@ -107,6 +107,7 @@ def search_products():
             'message': 'success',
             'data': {
                 'query': query,
+                'amount': amount,
                 'results': results
             }
         }
