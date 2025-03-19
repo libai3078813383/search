@@ -60,21 +60,38 @@ class ProductSearchEngine:
 
     def preprocess_text(self, text):
         """
-        文本预处理
-        1. 转换为小写
-        2. 分词
-        3. 去除停用词
+        文本预处理函数
+        参数:
+            text: 输入的文本字符串
+        返回:
+            expanded_words: 处理后的词列表
+
+        处理步骤:
+        1. 将文本转换为小写
+        2. 使用结巴分词进行分词
+        3. 过滤停用词
         4. 扩展同义词
         """
+        # 1. 转换为小写(针对英文)
         text = text.lower()
+
+        # 2. 使用结巴分词
         words = jieba.lcut(text)
+
+        # 3. 过滤停用词(如"的"、"了"、"在"等对文本分析无意义的词)
         words = [w for w in words if w not in Config.STOP_WORDS]
+
+        # 4. 扩展同义词(比如"手机"="电话"="移动电话")
         expanded_words = []
         for word in words:
+            # 如果该词在同义词典中存在
             if word in self.synonyms:
+                # 将该词的所有同义词添加到结果中
                 expanded_words.extend(self.synonyms[word])
             else:
+                # 如果没有同义词,保留原词
                 expanded_words.append(word)
+
         return expanded_words
 
     def preprocess_text1(self, text):
@@ -130,7 +147,7 @@ class ProductSearchEngine:
         query_tokens = self.preprocess_text(query)
         return query_tokens
 
-    def search(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
+    def search_test(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
         """
         搜索商品
         使用TF-IDF算法计算相关性得分
@@ -235,6 +252,110 @@ class ProductSearchEngine:
             products.append(self.products[pid]['spu_id'])
 
         return products,len(filtered_results)
+
+    def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
+        """
+        搜索商品
+        使用TF-IDF算法计算相关性得分,并根据词的相关性进行排序
+
+        参数:
+            query: 搜索查询字符串
+            page: 当前页码
+            limit: 每页数量
+            top_k: 最大结果数
+        """
+        # 定义词的相关性映射关系
+        WORD_RELEVANCE = {
+            # 食用油相关
+            "油": {
+                "食用油": 10,
+                "大豆油": 9,
+                "花生油": 9,
+                "菜籽油": 8,
+                "调和油": 8,
+                "橄榄油": 7,
+                # 其他油类权重较低
+                "机油": 2,
+                "润滑油": 2
+            },
+            # 米相关
+            "米": {
+                "大米": 10,
+                "小米": 9,
+                "糯米": 8,
+                "香米": 8,
+                "稻米": 8,
+                # 其他含米的词权重较低
+                "米粉": 5,
+                "米酒": 4
+            },
+            # 其他词的相关性配置
+            "面": {
+                "面条": 10,
+                "面粉": 9,
+                "挂面": 8,
+                "方便面": 8
+            }
+        }
+
+        query_tokens = self.preprocess_text(query)
+        if not query_tokens:
+            query_tokens = [query]
+
+        scores = defaultdict(float)
+
+        # 计算每个商品的得分
+        for token in query_tokens:
+            product_ids = self.index.get(token, [])
+            if product_ids:
+                # 计算IDF
+                idf = np.log(len(self.products) / len(product_ids))
+
+                for pid in product_ids:
+                    product = self.products[pid]
+                    product_name = product.get('name', '')
+
+                    # 基础分数
+                    base_score = idf * (len(token) if len(token) > 1 else 0.5)
+
+                    # 根据相关性词典计算额外权重
+                    relevance_weight = 1.0
+                    if token in WORD_RELEVANCE:
+                        # 检查产品名称中是否包含相关性词
+                        for word, weight in WORD_RELEVANCE[token].items():
+                            if word in product_name:
+                                relevance_weight = weight
+                                break
+
+                    # 计算最终得分
+                    final_score = base_score * relevance_weight
+                    scores[pid] += final_score
+
+        # 排序并获取结果
+        results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+
+        filtered_results = []
+        if zone_rule_id:
+            # 有 zone_rule_id 时进行过滤
+            for pid, score in results:
+                zone_rule_id_1 = self.products[pid].get('zone_rule_id')
+                if zone_rule_id_1 is None:
+                    zone_rule_id_1 = 0
+                if int(zone_rule_id_1) == int(zone_rule_id):
+                    filtered_results.append((pid, score))
+        else:
+            # 没有 zone_rule_id 时保留所有结果
+            filtered_results = results
+        # 对过滤后的结果进行分页
+        start = (page - 1) * limit
+        end = start + limit
+        paginated_results = filtered_results[start:end]
+        # 获取最终的spu_id列表
+        products = []
+        for pid, score in paginated_results:
+            products.append(self.products[pid]['spu_id'])
+
+        return products, len(filtered_results)
 
     def refresh_index(self):
         """刷新索引"""
