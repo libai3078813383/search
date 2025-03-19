@@ -243,7 +243,7 @@ class ProductSearchEngine:
         # 获取最终的spu_id列表
         products = []
         for pid, score in paginated_results:
-            products.append({self.products[pid]['spu_id']:score})
+            products.append(self.products[pid]['spu_id'])
 
         return products, len(filtered_results)
 
