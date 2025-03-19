@@ -233,11 +233,11 @@ def manage_synonyms():
             word = request.args.get('word')
 
             if not word:
-                return jsonify({
+                return {
                     'code': 400,
                     'message': '请提供要查询的词',
                     'data': None
-                }), 400
+                }, 400
 
             synonyms = search_engine.get_synonyms(word)
             return jsonify({
@@ -252,11 +252,11 @@ def manage_synonyms():
         elif request.method == 'POST':
             data = request.get_json()
             if not data or 'word' not in data or 'synonyms' not in data:
-                return jsonify({
+                return {
                     'code': 400,
                     'message': '请提供原词和同义词',
                     'data': None
-                }), 400
+                }, 400
 
             word = data['word']
             new_synonym = data['synonyms']
@@ -264,18 +264,18 @@ def manage_synonyms():
             # 检查同义词是否已存在
             existing_synonyms = search_engine.get_synonyms(word)
             if new_synonym in existing_synonyms:
-                return jsonify({
+                return {
                     'code': 400,
                     'message': f'同义词 "{new_synonym}" 已存在',
                     'data': None
-                }), 400
+                }, 400
 
             search_engine.add_synonym(word, new_synonym)
-            return jsonify({
+            return {
                 'code': 200,
                 'message': '同义词添加成功',
                 'data': None
-            })
+            }
 
         elif request.method == 'DELETE':
             data = request.get_json()
@@ -292,29 +292,29 @@ def manage_synonyms():
             # 检查要删除的同义词是否存在
             existing_synonyms = search_engine.get_synonyms(word)
             if synonym_to_delete not in existing_synonyms:
-                return jsonify({
+                return {
                     'code': 400,
                     'message': f'同义词 "{synonym_to_delete}" 不存在',
                     'data': None
-                }), 400
+                }, 400
 
             search_engine.remove_synonym(word, synonym_to_delete)
-            return jsonify({
+            return {
                 'code': 200,
                 'message': '同义词删除成功',
                 'data': None
-            })
+            }
 
     except Exception as e:
-        return jsonify({
+        return {
             'code': 500,
             'message': f'操作失败: {str(e)}',
             'data': None
-        }), 500
+        }, 500
 
 
 @search_bp.route('/refresh', methods=['POST'])
-@logger.api_logger('刷新搜索索引接口')
+
 def refresh_index():
     """
     刷新搜索索引接口
