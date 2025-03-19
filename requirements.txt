@@ -1,0 +1,5 @@
+Flask==3.0.3
+jieba==0.42.1
+numpy==1.24.4
+PyMySQL==1.1.1
+
