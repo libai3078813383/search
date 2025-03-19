@@ -204,20 +204,20 @@ class ProductSearchEngine:
                 for pid in product_ids:
                     # 对多字词给予更高的权重
                     weight = len(token) if len(token) > 1 else 0.5
-                    # scores[pid] += idf * weight
-                    scores[pid] = scores[pid] + (idf * weight)
-
-                    # 应用关键词权重
-                    product_name = self.products[pid].get('name', '').lower()
-                    for keyword, weight_dict in keyword_weights.items():
-                        if token == keyword:  # 如果搜索词匹配关键词
-                            # 检查产品名称是否包含权重词
-                            for term, weight_value in weight_dict.items():
-                                if term in product_name:
-                                    scores[pid] *= weight_value
-                                    break
-
-                    scores[pid] += scores[pid]
+                    scores[pid] += idf * weight
+                    # scores[pid] = scores[pid] + (idf * weight)
+                    #
+                    # # 应用关键词权重
+                    # product_name = self.products[pid].get('name', '').lower()
+                    # for keyword, weight_dict in keyword_weights.items():
+                    #     if token == keyword:  # 如果搜索词匹配关键词
+                    #         # 检查产品名称是否包含权重词
+                    #         for term, weight_value in weight_dict.items():
+                    #             if term in product_name:
+                    #                 scores[pid] *= weight_value
+                    #                 break
+                    #
+                    # scores[pid] += scores[pid]
 
 
         # 排序并获取所有结果
