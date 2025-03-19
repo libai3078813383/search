@@ -12,7 +12,7 @@ class Config:
     #     'database': 'crmeb'
     # }
 
-    STOP_WORDS = set(['的', '了', '和', '与', '等', '是'])
+    STOP_WORDS = set(['的', '了', '和', '与', '等', '是','个','箱','g','kg','ml'])
 
     USER_DICT = [
         "iPhone13", "Type-C", "充电器", "数据线", "手机壳",
