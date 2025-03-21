@@ -147,7 +147,7 @@ class ProductSearchEngine:
         query_tokens = self.preprocess_text(query)
         return query_tokens
 
-    def search(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
+    def search_test(self, query, page=1, limit=4, top_k=100,zone_rule_id=2):
         """
         搜索商品
         使用TF-IDF算法计算相关性得分
@@ -161,34 +161,7 @@ class ProductSearchEngine:
         返回:
             按相关性得分排序的商品列表和总数
         """
-        # 关键词权重配置
-        keyword_weights = {
-            "油": {
-                "食用油": 10,
-                "大豆油": 9,
-                "花生油": 9,
-                "菜籽油": 8,
-                "调和油": 9,
-                "橄榄油": 7,
-                "机油": 2,
-                "润滑油": 2
-            },
-            "米": {
-                "大米": 10,
-                "小米": 9,
-                "糯米": 8,
-                "香米": 8,
-                "稻米": 8,
-                "米粉": 5,
-                "米酒": 4
-            },
-            "面": {
-                "面条": 10,
-                "面粉": 9,
-                "挂面": 8,
-                "方便面": 8
-            }
-        }
+
         query_tokens = self.preprocess_text(query)
         if not query_tokens:
             query_tokens = [query]
@@ -295,78 +268,35 @@ class ProductSearchEngine:
         #         for pid, score in paginated_results
         #     ]
 
-    def search_test(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
+    def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
         """
         搜索商品
-        使用TF-IDF算法计算相关性得分，并根据关键词权重调整排序
-
-        参数:
-            query: 搜索查询字符串
-            page: 当前页码(从1开始)
-            limit: 每页显示数量
-            top_k: 计算的最大结果数量
-            zone_rule_id: 区域规则ID
-
-        返回:
-            按相关性得分排序的商品列表和总数
+        同时支持分词搜索和完整名称搜索
         """
-        # 关键词权重配置
-        keyword_weights = {
-            "油": {
-                "食用油": 10,
-                "大豆油": 9,
-                "花生油": 9,
-                "菜籽油": 8,
-                "调和油": 8,
-                "橄榄油": 7,
-                "机油": 2,
-                "润滑油": 2
-            },
-            "米": {
-                "大米": 10,
-                "小米": 9,
-                "糯米": 8,
-                "香米": 8,
-                "稻米": 8,
-                "米粉": 5,
-                "米酒": 4
-            },
-            "面": {
-                "面条": 10,
-                "面粉": 9,
-                "挂面": 8,
-                "方便面": 8
-            }
-        }
+        scores = defaultdict(float)
 
+        # 1. 首先进行完整查询匹配
+        for product in self.products:
+            product_name = product.get('name', '').lower()
+            if query.lower() in product_name:
+                # 完整匹配给予较高的基础分数
+                scores[self.products.index(product)] += 10.0
+
+        # 2. 然后进行分词搜索
         query_tokens = self.preprocess_text(query)
         if not query_tokens:
             query_tokens = [query]
 
-        scores = defaultdict(float)
-
-        # 计算每个商品的得分
+        # 计算每个商品的分词得分
         for token in query_tokens:
             product_ids = self.index.get(token, [])
             if product_ids:
                 # 计算IDF
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
-                    # 基础权重计算
+                    # 对多字词给予更高的权重
                     weight = len(token) if len(token) > 1 else 0.5
-                    base_score = idf * weight
-
-                    # 应用关键词权重
-                    product_name = self.products[pid].get('name', '').lower()
-                    for keyword, weight_dict in keyword_weights.items():
-                        if token == keyword:  # 如果搜索词匹配关键词
-                            # 检查产品名称是否包含权重词
-                            for term, weight_value in weight_dict.items():
-                                if term in product_name:
-                                    base_score *= weight_value
-                                    break
-
-                    scores[pid] += base_score
+                    scores[pid] += idf * weight
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -389,9 +319,7 @@ class ProductSearchEngine:
         paginated_results = filtered_results[start:end]
 
         # 获取最终的spu_id列表
-        products = []
-        for pid, score in paginated_results:
-            products.append(self.products[pid]['spu_id'])
+        products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
 
         return products, len(filtered_results)
 
