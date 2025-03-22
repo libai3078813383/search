@@ -296,30 +296,47 @@ class ProductSearchEngine:
             product_ids = self.index.get(token, [])
             if product_ids:
                 # 计算IDF
+                bonus_added = False  # 添加标志变量
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
                     name = self.products[pid]['store_name']
+
+
                     if query.lower() in name:
-                        if len(query)  > 1:
+                        if len(query) > 1 :
                             # 完整匹配给予较高的基础分数
-                            bonus = min(len(query) * 2, 10)  # 限制最大加分为10
+                            bonus = min(len(query) * 10, 100)  # 限制最大加分为10
                             scores[pid] += bonus
+                            bonus_added = True  # 设置标志为True
+
                         if token in name:
                             if len(token) > 1:
                                 # 完整匹配给予较高的基础分数
-                                bonus = min(len(token) * 2, 10)  # 限制最大加分为10
+                                bonus = min(len(token) * 10, 100)  # 限制最大加分为10
                                 scores[pid] += bonus
+                                bonus_added = True  # 设置标志为True
+
                     # 对多字词给予更高的权重
-                    #weight = len(token) if len(token) > 1 else 0.5
-                    #scores[pid] += idf * weight
                     if len(token) > 1:
                         weight = len(token)  # 词长即权重
-
                     else:
-                        weight = 0.5 # 单字基础权重
-                    scores[pid] += idf * weight
+                        weight = 0.5  # 单字基础权重
+                    if token in name:
+                        scores[pid] += idf * weight
+                    # if '香港周六福5G黄金-足金光面平安扣吊坠' in name:
+                    #     print(f"{product_ids}")
+                    #     print(f"{scores}")
+                    #     print(f"pid{pid}")
+                    #     print(f'query:{query}')
+                    #     print(f'token:{token}')
+                    #     print(f'idf：{idf}')
+                    #     print(f'score{scores[pid]}')
 
-                    # print(f'{name}的权重 {scores[pid]}')
+
+
+
+
+
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -345,6 +362,7 @@ class ProductSearchEngine:
 
         # 获取最终的spu_id列表
         products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
+        # products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
 
         return products, len(filtered_results)
 
