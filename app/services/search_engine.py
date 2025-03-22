@@ -88,6 +88,8 @@ class ProductSearchEngine:
             if word in self.synonyms:
                 # 将该词的所有同义词添加到结果中
                 expanded_words.extend(self.synonyms[word])
+                # 最后把原词也加入
+                expanded_words.append(word)
             else:
                 # 如果没有同义词,保留原词
                 expanded_words.append(word)
