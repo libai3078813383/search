@@ -277,7 +277,7 @@ class ProductSearchEngine:
 
         # 1. 首先进行完整查询匹配
         for product in self.products:
-            product_name = product.get('name', '').lower()
+            product_name = product.get('store_name', '').lower()
             if query.lower() in product_name:
                 if len(query) > 1:
                 # 完整匹配给予较高的基础分数
@@ -298,14 +298,17 @@ class ProductSearchEngine:
                 # 计算IDF
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
+                    name = self.products[pid]['store_name']
                     # 对多字词给予更高的权重
                     #weight = len(token) if len(token) > 1 else 0.5
                     #scores[pid] += idf * weight
-                    if len(token) > 1:
-                        weight = len(token)  # 词长即权重
+                    if len(name) > 1:
+                        weight = len(name)  # 词长即权重
                     else:
                         weight = 0.5 # 单字基础权重
                     scores[pid] += idf * weight
+
+                    # print(f'{name}的权重 {scores[pid]}')
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -319,6 +322,8 @@ class ProductSearchEngine:
                     zone_rule_id_1 = 0
                 if int(zone_rule_id_1) == int(zone_rule_id):
                     filtered_results.append((pid, score))
+                # name = self.products[pid]['store_name']
+                # print(f'{name}1111的权重 {scores[pid]}')
         else:
             filtered_results = results
 
