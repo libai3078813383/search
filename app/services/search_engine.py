@@ -278,9 +278,25 @@ class ProductSearchEngine:
         # 1. 首先进行完整查询匹配
         for product in self.products:
             product_name = product.get('name', '').lower()
-            if query.lower() in product_name:
-                # 完整匹配给予较高的基础分数
-                scores[self.products.index(product)] += 10.0
+            query_lower = query.lower()
+            if query_lower in product_name:
+                # 计算匹配的总字数
+                matched_chars = len(query_lower) * product_name.count(query_lower)
+
+                # 设置一个合理的上限，防止分数过高
+                max_score = 20
+                score = min(matched_chars, max_score)
+
+                # 开头匹配的额外权重根据字数计算
+                if product_name.startswith(query_lower):
+                    if len(query_lower) <= 1:  # 1个字
+                        score += 1
+                    elif len(query_lower) <= 2:  # 2个字
+                        score += 3
+                    else:  # 3个字及以上
+                        score += 6
+
+                scores[self.products.index(product)] += score
 
         # 2. 然后进行分词搜索
         query_tokens = self.preprocess_text(query)
