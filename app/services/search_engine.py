@@ -275,14 +275,14 @@ class ProductSearchEngine:
         """
         scores = defaultdict(float)
 
-        # 1. 首先进行完整查询匹配
-        for product in self.products:
-            product_name = product.get('store_name', '').lower()
-            if query.lower() in product_name:
-                if len(query) > 1:
-                # 完整匹配给予较高的基础分数
-                    bonus = min(len(query) * 2, 10)  # 限制最大加分为10
-                    scores[self.products.index(product)] += bonus
+        # # 1. 首先进行完整查询匹配
+        # for product in self.products:
+        #     product_name = product.get('store_name', '').lower()
+        #     if query.lower() in product_name:
+        #         if len(query) > 1:
+        #         # 完整匹配给予较高的基础分数
+        #             bonus = min(len(query) * 2, 10)  # 限制最大加分为10
+        #             scores[self.products.index(product)] += bonus
 
                     #scores[self.products.index(product)] += 10.0
 
@@ -299,16 +299,27 @@ class ProductSearchEngine:
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
                     name = self.products[pid]['store_name']
+                    if query.lower() in name:
+                        if len(query)  > 1:
+                            # 完整匹配给予较高的基础分数
+                            bonus = min(len(query) * 2, 10)  # 限制最大加分为10
+                            scores[pid] += bonus
+                        if token in name:
+                            if len(token) > 1:
+                                # 完整匹配给予较高的基础分数
+                                bonus = min(len(token) * 2, 10)  # 限制最大加分为10
+                                scores[pid] += bonus
                     # 对多字词给予更高的权重
                     #weight = len(token) if len(token) > 1 else 0.5
                     #scores[pid] += idf * weight
-                    if len(name) > 1:
-                        weight = len(name)  # 词长即权重
+                    if len(token) > 1:
+                        weight = len(token)  # 词长即权重
+
                     else:
                         weight = 0.5 # 单字基础权重
                     scores[pid] += idf * weight
 
-                    # print(f'{name}的权重 {scores[pid]}')
+                    print(f'{name}的权重 {scores[pid]}')
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
