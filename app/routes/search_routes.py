@@ -3,13 +3,13 @@ import traceback
 from flask import Blueprint, jsonify, request
 from app.services.search_engine import ProductSearchEngine
 from utils.database import get_db_connection
-from utils.logger_handler import logger
+
 search_bp = Blueprint('search', __name__)
 search_engine = ProductSearchEngine()
 
 
 @search_bp.route('/search', methods=['GET'])
-@logger.api_logger('商品搜索接口')
+
 def search_products():
     """
     商品搜索接口
@@ -34,7 +34,7 @@ def search_products():
             'remote_addr': request.remote_addr,  # 客户端IP
             'user_agent': request.user_agent.string  # 用户代理
         }
-        logger.log_info('搜索接口原始请求信息', request_info)
+
         # 参数处理
         try:
             limit = int(request.args.get('limit', 1000))
@@ -47,29 +47,19 @@ def search_products():
                 'message': f'参数格式错误: {str(ve)}',
                 'data': None
             }
-            logger.log_error('搜索接口参数解析失败', {
-                'request_info': request_info,
-                'error': str(ve),
-                'response': error_response
-            })
+
             return error_response, 400
         # 参数验证
         if limit >= 1000:
             limit = 1000
-            logger.log_info('搜索限制数量超过1000，已自动调整为1000', {
-                'original_limit': request.args.get('limit'),
-                'adjusted_limit': limit
-            })
+
         if not query:
             error_response = {
                 'code': 400,
                 'message': '请提供搜索关键词',
                 'data': None
             }
-            logger.log_info('搜索接口参数验证失败', {
-                'request_info': request_info,
-                'response': error_response
-            })
+
             return error_response, 400
         # 记录处理后的实际搜索参数
         search_params = {
@@ -78,7 +68,7 @@ def search_products():
             'page': page,
             'top_k': 1000
         }
-        logger.log_info('搜索接口处理后的参数', search_params)
+
         # 执行搜索
         try:
             results,amount = search_engine.search(
@@ -94,12 +84,7 @@ def search_products():
                 'message': f'搜索引擎错误: {str(se)}',
                 'data': None
             }
-            logger.log_error('搜索引擎调用失败', {
-                'request_info': request_info,
-                'search_params': search_params,
-                'error': str(se),
-                'response': error_response
-            })
+
             return error_response, 500
         # 构建响应
         response_data = {
@@ -112,11 +97,7 @@ def search_products():
             }
         }
         # 记录成功响应
-        logger.log_info('搜索接口调用成功', {
-            'request_info': request_info,
-            'search_params': search_params,
-            'response': response_data
-        })
+
         return response_data
     except Exception as e:
         # 记录未预期的错误
@@ -126,16 +107,7 @@ def search_products():
             'data': None
         }
 
-        logger.log_error('搜索接口发生未预期错误', {
-            'request_info': request_info if 'request_info' in locals() else '请求信息获取失败',
-            'search_params': search_params if 'search_params' in locals() else '搜索参数获取失败',
-            'error': {
-                'type': type(e).__name__,
-                'message': str(e),
-                'traceback': traceback.format_exc()
-            },
-            'response': error_response
-        })
+
 
         return error_response, 500
 
@@ -194,7 +166,7 @@ def add_product():
 
 
 @search_bp.route('/synonyms', methods=['GET', 'POST', 'DELETE'])
-@logger.api_logger('获取同义词接口')
+
 def manage_synonyms():
     """
     同义词管理接口
@@ -228,7 +200,7 @@ def manage_synonyms():
             'remote_addr': request.remote_addr,  # 客户端IP
             'user_agent': request.user_agent.string  # 用户代理
         }
-        logger.log_info('获取同义词原始请求信息', request_info)
+
         if request.method == 'GET':
             word = request.args.get('word')
 

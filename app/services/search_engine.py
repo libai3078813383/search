@@ -319,7 +319,7 @@ class ProductSearchEngine:
                         weight = 0.5 # 单字基础权重
                     scores[pid] += idf * weight
 
-                    print(f'{name}的权重 {scores[pid]}')
+                    # print(f'{name}的权重 {scores[pid]}')
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
