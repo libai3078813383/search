@@ -366,8 +366,8 @@ class ProductSearchEngine:
         paginated_results = filtered_results[start:end]
 
         # 获取最终的spu_id列表
-        # products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
-        products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
+        products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
+        # products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
 
         return products, len(filtered_results)
 
