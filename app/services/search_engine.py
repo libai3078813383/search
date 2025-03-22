@@ -305,25 +305,28 @@ class ProductSearchEngine:
 
 
                     if query.lower() in name:
-                        if len(query) > 1 :
+                        if len(query) > 2 :
                             # 完整匹配给予较高的基础分数
-                            bonus = min(len(query) * 10, 100)  # 限制最大加分为10
+                            bonus = min(len(query) * 2, 10)  # 限制最大加分为10
                             scores[pid] += bonus
                             bonus_added = True  # 设置标志为True
 
-                        if token in name:
-                            if len(token) > 1:
-                                # 完整匹配给予较高的基础分数
-                                bonus = min(len(token) * 10, 100)  # 限制最大加分为10
-                                scores[pid] += bonus
-                                bonus_added = True  # 设置标志为True
+                        # if token in name:
+                        #     if len(token) > 1:
+                        #         # 完整匹配给予较高的基础分数
+                        #         bonus = min(len(token) * 2, 10)  # 限制最大加分为10
+                        #         scores[pid] += bonus
+                        #         bonus_added = True  # 设置标志为True
 
                     # 对多字词给予更高的权重
-                    if len(token) > 1:
+                    # weight = 0.5
+                    if len(token) > 2:
                         weight = len(token)  # 词长即权重
                     else:
                         weight = 0.5  # 单字基础权重
                     if token in name:
+                        print(token,name)
+
                         scores[pid] += idf * weight
                     # if '香港周六福5G黄金-足金光面平安扣吊坠' in name:
                     #     print(f"{product_ids}")
@@ -363,8 +366,8 @@ class ProductSearchEngine:
         paginated_results = filtered_results[start:end]
 
         # 获取最终的spu_id列表
-        products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
-        # products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
+        # products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
+        products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
 
         return products, len(filtered_results)
 
