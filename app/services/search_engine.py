@@ -94,35 +94,6 @@ class ProductSearchEngine:
 
         return expanded_words
 
-    def preprocess_text1(self, text):
-        """
-        文本预处理优化版
-        """
-        # 1. 基础清理
-        text = text.lower().strip()
-
-        # 2. 特殊字符处理
-        text = re.sub(r'[^\w\s]', ' ', text)
-
-        # 3. 分词
-        words = jieba.lcut(text)
-
-        # 4. 停用词过滤
-        words = [w for w in words if w not in Config.STOP_WORDS and len(w.strip()) > 1]
-
-        # 5. 同义词扩展
-        expanded_words = []
-        for word in words:
-            if word in self.synonyms:
-                expanded_words.extend(self.synonyms[word])
-            else:
-                expanded_words.append(word)
-
-        # 6. 词性过滤（可选）
-        words_with_flags = pseg.cut(' '.join(expanded_words))
-        filtered_words = [w.word for w in words_with_flags if w.flag in ['n', 'v', 'a']]
-
-        return filtered_words
 
     def add_product(self, product):
         """
@@ -283,6 +254,10 @@ class ProductSearchEngine:
                 # 计算匹配的总字数
                 matched_chars = len(query_lower) * product_name.count(query_lower)
 
+                # 单字搜索惩罚
+                if len(query_lower) <= 1:
+                    matched_chars *= 0.5  # 可以调整惩罚系数，比如0.5表示只有原来的一半分数
+
                 # 设置一个合理的上限，防止分数过高
                 max_score = 20
                 score = min(matched_chars, max_score)
@@ -290,7 +265,7 @@ class ProductSearchEngine:
                 # 开头匹配的额外权重根据字数计算
                 if product_name.startswith(query_lower):
                     if len(query_lower) <= 1:  # 1个字
-                        score += 1
+                        score += 0.5  # 同样降低单字的开头匹配权重
                     elif len(query_lower) <= 2:  # 2个字
                         score += 3
                     else:  # 3个字及以上
