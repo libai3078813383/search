@@ -94,6 +94,35 @@ class ProductSearchEngine:
 
         return expanded_words
 
+    def preprocess_text1(self, text):
+        """
+        文本预处理优化版
+        """
+        # 1. 基础清理
+        text = text.lower().strip()
+
+        # 2. 特殊字符处理
+        text = re.sub(r'[^\w\s]', ' ', text)
+
+        # 3. 分词
+        words = jieba.lcut(text)
+
+        # 4. 停用词过滤
+        words = [w for w in words if w not in Config.STOP_WORDS and len(w.strip()) > 1]
+
+        # 5. 同义词扩展
+        expanded_words = []
+        for word in words:
+            if word in self.synonyms:
+                expanded_words.extend(self.synonyms[word])
+            else:
+                expanded_words.append(word)
+
+        # 6. 词性过滤（可选）
+        words_with_flags = pseg.cut(' '.join(expanded_words))
+        filtered_words = [w.word for w in words_with_flags if w.flag in ['n', 'v', 'a']]
+
+        return filtered_words
 
     def add_product(self, product):
         """
@@ -249,29 +278,13 @@ class ProductSearchEngine:
         # 1. 首先进行完整查询匹配
         for product in self.products:
             product_name = product.get('name', '').lower()
-            query_lower = query.lower()
-            if query_lower in product_name:
-                # 计算匹配的总字数
-                matched_chars = len(query_lower) * product_name.count(query_lower)
+            if query.lower() in product_name:
+                if len(query) > 1:
+                # 完整匹配给予较高的基础分数
+                    bonus = min(len(query) * 2, 10)  # 限制最大加分为10
+                    scores[self.products.index(product)] += bonus
 
-                # 单字搜索惩罚
-                if len(query_lower) <= 1:
-                    matched_chars *= 0.5  # 可以调整惩罚系数，比如0.5表示只有原来的一半分数
-
-                # 设置一个合理的上限，防止分数过高
-                max_score = 20
-                score = min(matched_chars, max_score)
-
-                # 开头匹配的额外权重根据字数计算
-                if product_name.startswith(query_lower):
-                    if len(query_lower) <= 1:  # 1个字
-                        score += 0.5  # 同样降低单字的开头匹配权重
-                    elif len(query_lower) <= 2:  # 2个字
-                        score += 3
-                    else:  # 3个字及以上
-                        score += 6
-
-                scores[self.products.index(product)] += score
+                    #scores[self.products.index(product)] += 10.0
 
         # 2. 然后进行分词搜索
         query_tokens = self.preprocess_text(query)
@@ -286,7 +299,12 @@ class ProductSearchEngine:
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
                     # 对多字词给予更高的权重
-                    weight = len(token) if len(token) > 1 else 0.5
+                    #weight = len(token) if len(token) > 1 else 0.5
+                    #scores[pid] += idf * weight
+                    if len(token) > 1:
+                        weight = len(token)  # 词长即权重
+                    else:
+                        weight = 0.5 # 单字基础权重
                     scores[pid] += idf * weight
 
         # 排序并获取所有结果
