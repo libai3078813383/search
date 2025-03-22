@@ -305,7 +305,7 @@ class ProductSearchEngine:
 
 
                     if query.lower() in name:
-                        if len(query) > 2 :
+                        if len(query) > 1 :
                             # 完整匹配给予较高的基础分数
                             bonus = min(len(query) * 2, 10)  # 限制最大加分为10
                             scores[pid] += bonus
@@ -320,7 +320,7 @@ class ProductSearchEngine:
 
                     # 对多字词给予更高的权重
                     # weight = 0.5
-                    if len(token) > 2:
+                    if len(token) > 1:
                         weight = len(token)  # 词长即权重
                     else:
                         weight = 0.5  # 单字基础权重
