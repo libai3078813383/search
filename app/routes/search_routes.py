@@ -24,23 +24,15 @@ def search_products():
         }
     """
     try:
-        # 记录完整的请求信息
-        request_info = {
-            'args': dict(request.args),  # 所有GET参数
-            'headers': dict(request.headers),  # 所有请求头
-            'method': request.method,  # 请求方法
-            'path': request.path,  # 请求路径
-            'url': request.url,  # 完整URL
-            'remote_addr': request.remote_addr,  # 客户端IP
-            'user_agent': request.user_agent.string  # 用户代理
-        }
+
 
         # 参数处理
         try:
             limit = int(request.args.get('limit', 1000))
             query = request.args.get('query', '')
             page = int(request.args.get('page', 1))
-            zone_rule_id = request.args.get('zone_rule_id', 0)
+            zone_rule_id = request.args.get('zone_rule_id') or 0
+            print(zone_rule_id)
         except ValueError as ve:
             error_response = {
                 'code': 400,
@@ -71,13 +63,14 @@ def search_products():
 
         # 执行搜索
         try:
-            results,amount = search_engine.search(
+            results, amount = search_engine.search(
                 query=query,
+                page=page,
                 limit=limit,
                 top_k=1000,
-                page=page,
                 zone_rule_id=zone_rule_id
             )
+
         except Exception as se:
             error_response = {
                 'code': 500,

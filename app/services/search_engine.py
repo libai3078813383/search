@@ -270,7 +270,7 @@ class ProductSearchEngine:
         #         for pid, score in paginated_results
         #     ]
 
-    def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=2):
+    def search(self, query, page=1, limit=4, top_k=100, zone_rule_id=0):
         """
         搜索商品
         同时支持分词搜索和完整名称搜索
@@ -305,11 +305,19 @@ class ProductSearchEngine:
 
 
                     if query.lower() in name:
-                        if len(query) > 1 :
+                        if len(query) == 1 :
+
+                            scores[pid] += 0.2
+                        if len(query) == 2 :
+
+                            scores[pid] += 0.4
+
+                        if len(query) == 3 :
+                            scores[pid] += 0.8
+                        if len(query) > 3 :
                             # 完整匹配给予较高的基础分数
-                            bonus = min(len(query) * 2, 10)  # 限制最大加分为10
+                            bonus = min(len(query) * 1.5, 10)  # 限制最大加分为10
                             scores[pid] += bonus
-                            bonus_added = True  # 设置标志为True
 
                         # if token in name:
                         #     if len(token) > 1:
@@ -325,7 +333,7 @@ class ProductSearchEngine:
                     else:
                         weight = 0.5  # 单字基础权重
                     if token in name:
-                        print(token,name)
+                        # print(token,name)
 
                         scores[pid] += idf * weight
                     # if '香港周六福5G黄金-足金光面平安扣吊坠' in name:
@@ -345,12 +353,15 @@ class ProductSearchEngine:
 
         # 排序并获取所有结果
         results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+        # print(results)
 
         # 根据zone_rule_id过滤
         filtered_results = []
-        if zone_rule_id:
+        if int(zone_rule_id) != 0:
+            print(zone_rule_id)
             for pid, score in results:
                 zone_rule_id_1 = self.products[pid].get('zone_rule_id')
+                print(zone_rule_id_1)
                 if zone_rule_id_1 is None:
                     zone_rule_id_1 = 0
                 if int(zone_rule_id_1) == int(zone_rule_id):
