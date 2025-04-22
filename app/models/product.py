@@ -8,6 +8,6 @@ class Product:
     def from_db_row(row):
         return {
             'id': row['id'],
-            'name': row['store_name'],
+            'name': row['keyword'],
             'price': float(row['price'])
         }

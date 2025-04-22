@@ -134,7 +134,7 @@ class ProductSearchEngine:
         product_id = len(self.products)
         self.products.append(product)
 
-        name = product['store_name']
+        name = product['keyword']
         tokens = self.preprocess_text(name)
 
         # 为分词结果建立索引
@@ -292,7 +292,7 @@ class ProductSearchEngine:
                 bonus_added = False  # 添加标志变量
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
-                    name = self.products[pid]['store_name']
+                    name = self.products[pid]['keyword']
 
 
                     if query.lower() in name:
