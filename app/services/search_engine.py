@@ -44,7 +44,7 @@ class ProductSearchEngine:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         try:
-            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
+            cursor.execute("SELECT S.spu_id,S.product_id,S.keyword,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
             products = cursor.fetchall()
 
             # 清空现有索引
@@ -277,16 +277,7 @@ class ProductSearchEngine:
         """
         scores = defaultdict(float)
 
-        # # 1. 首先进行完整查询匹配
-        # for product in self.products:
-        #     product_name = product.get('store_name', '').lower()
-        #     if query.lower() in product_name:
-        #         if len(query) > 1:
-        #         # 完整匹配给予较高的基础分数
-        #             bonus = min(len(query) * 2, 10)  # 限制最大加分为10
-        #             scores[self.products.index(product)] += bonus
 
-                    #scores[self.products.index(product)] += 10.0
 
         # 2. 然后进行分词搜索
         query_tokens = self.preprocess_text(query)
@@ -319,12 +310,7 @@ class ProductSearchEngine:
                             bonus = min(len(query) * 1.5, 10)  # 限制最大加分为10
                             scores[pid] += bonus
 
-                        # if token in name:
-                        #     if len(token) > 1:
-                        #         # 完整匹配给予较高的基础分数
-                        #         bonus = min(len(token) * 2, 10)  # 限制最大加分为10
-                        #         scores[pid] += bonus
-                        #         bonus_added = True  # 设置标志为True
+
 
                     # 对多字词给予更高的权重
                     # weight = 0.5
@@ -336,14 +322,6 @@ class ProductSearchEngine:
                         # print(token,name)
 
                         scores[pid] += idf * weight
-                    # if '香港周六福5G黄金-足金光面平安扣吊坠' in name:
-                    #     print(f"{product_ids}")
-                    #     print(f"{scores}")
-                    #     print(f"pid{pid}")
-                    #     print(f'query:{query}')
-                    #     print(f'token:{token}')
-                    #     print(f'idf：{idf}')
-                    #     print(f'score{scores[pid]}')
 
 
 
