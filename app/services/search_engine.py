@@ -126,10 +126,29 @@ class ProductSearchEngine:
 
         return filtered_words
 
+    # def add_product(self, product):
+    #     """
+    #     添加商品到索引
+    #     为商品名称中的每个词建立倒排索引
+    #     """
+    #     product_id = len(self.products)
+    #     self.products.append(product)
+    #
+    #     name = product['keyword']
+    #     tokens = self.preprocess_text(name)
+    #
+    #     # 为分词结果建立索引
+    #     for token in tokens:
+    #         self.index[token].append(product_id)
+    #
+    #     # 为单字建立索引
+    #     for char in name:
+    #         if char not in Config.STOP_WORDS:
+    #             self.index[char].append(product_id)
     def add_product(self, product):
         """
         添加商品到索引
-        为商品名称中的每个词建立倒排索引
+        为商品名称中的每个词、单字和2~4长度的连续子串建立倒排索引
         """
         product_id = len(self.products)
         self.products.append(product)
@@ -141,10 +160,22 @@ class ProductSearchEngine:
         for token in tokens:
             self.index[token].append(product_id)
 
-        # 为单字建立索引
+        # 为单字建立索引（已有逻辑）
         for char in name:
             if char not in Config.STOP_WORDS:
                 self.index[char].append(product_id)
+
+        # ✅ 只加入长度 2~4 的连续子串
+        name_cleaned = re.sub(r'\s+', '', name)  # 去掉空格
+        length = len(name_cleaned)
+        for i in range(length):
+            for j in range(i + 2, min(i + 5, length + 1)):  # 2~4长度子串
+                sub_str = name_cleaned[i:j]
+                if sub_str not in Config.STOP_WORDS:
+                    self.index[sub_str].append(product_id)
+
+        # print(f'✅ 商品已添加，当前索引关键词数: {len(self.index)}')
+
     def test(self,query):
         query_tokens = self.preprocess_text(query)
         return query_tokens
