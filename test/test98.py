@@ -106,7 +106,7 @@ class ProductSearchEngine:
         product_id = len(self.products)
         self.products.append(product)
 
-        name = product['store_name']
+        name = product['keyword']
         tokens = self.preprocess_text(name)
         for token in tokens:
             self.index[token].append(product_id)
