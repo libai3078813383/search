@@ -44,7 +44,7 @@ class ProductSearchEngine:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         try:
-            cursor.execute("SELECT S.spu_id,S.product_id,S.keyword,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
+            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
             products = cursor.fetchall()
 
             # 清空现有索引
@@ -153,7 +153,7 @@ class ProductSearchEngine:
         product_id = len(self.products)
         self.products.append(product)
 
-        name = product['keyword']
+        name = product['store_name']
         tokens = self.preprocess_text(name)
 
         # 为分词结果建立索引
@@ -323,7 +323,7 @@ class ProductSearchEngine:
                 bonus_added = False  # 添加标志变量
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
-                    name = self.products[pid]['keyword']
+                    name = self.products[pid]['store_name']
 
 
                     if query.lower() in name:
@@ -338,7 +338,7 @@ class ProductSearchEngine:
                             scores[pid] += 0.8
                         if len(query) > 3 :
                             # 完整匹配给予较高的基础分数
-                            bonus = min(len(query) * 1.5, 10)  # 限制最大加分为10
+                            bonus = min(len(query) * 1.5, 20)  # 限制最大加分为10
                             scores[pid] += bonus
 
 
