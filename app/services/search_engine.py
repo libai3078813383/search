@@ -38,13 +38,32 @@ class ProductSearchEngine:
             cursor.close()
             conn.close()
 
+    def clean_keyword(self,keyword, store_name):
+        # 将 keyword 分割为多个关键词项
+        keyword_parts = re.split(r'[,，/\s]+', keyword)
+        keyword_parts = [k.strip() for k in keyword_parts if k.strip()]
+        # 如果某个 keyword 项是 store_name 的子串（被 store_name 包含），就排除
+        filtered_parts = []
+        for part in keyword_parts:
+            if part not in store_name:
+                filtered_parts.append(part)
+        # 去重同时保持顺序（防止 keyword 中多个重复项）
+        seen = set()
+        final_parts = []
+        for part in filtered_parts:
+            if part not in seen:
+                final_parts.append(part)
+                seen.add(part)
+        # 拼接：剩余的 keyword + 原始 store_name
+        return ','.join(final_parts + [store_name]) if final_parts else store_name
+
     def load_products_from_db(self):
         """从数据库加载商品并建立索引"""
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         try:
-            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
+            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,S.keyword,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
             products = cursor.fetchall()
 
             # 清空现有索引
@@ -52,8 +71,19 @@ class ProductSearchEngine:
             self.products.clear()
 
             # 重新建立索引
+            # for product in products:
+            #     self.add_product(product)
             for product in products:
+                store_name = product.get('store_name') or ''
+                keyword = product.get('keyword') or ''
+                # if '苏泊尔' in keyword:
+                #     print(store_name)
+                #     print(keyword)
+
+                product['store_name'] = self.clean_keyword(keyword, store_name)
+                # print(product["store_name"])
                 self.add_product(product)
+
         finally:
             cursor.close()
             conn.close()
@@ -324,6 +354,7 @@ class ProductSearchEngine:
                 idf = np.log(len(self.products) / len(product_ids))
                 for pid in product_ids:
                     name = self.products[pid]['store_name']
+                    # print(f'商品名称{name}')
 
 
                     if query.lower() in name:
@@ -338,7 +369,7 @@ class ProductSearchEngine:
                             scores[pid] += 0.8
                         if len(query) > 3 :
                             # 完整匹配给予较高的基础分数
-                            bonus = min(len(query) * 1.5, 20)  # 限制最大加分为10
+                            bonus = min(len(query) * 1.5, 50)  # 限制最大加分为10
                             scores[pid] += bonus
 
 
