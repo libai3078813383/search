@@ -1,16 +1,10 @@
 class Config:
     MYSQL_CONFIG = {
-        'host': 'pc-bp10t7s47hgv1e3wu.rwlb.rds.aliyuncs.com',
-        'user': 'py',
-        'password': 'py@168520',
-        'database': 'crmeb'
+        'host': '',
+        'user': '',
+        'password': '',
+        'database': ''
     }
-    # MYSQL_CONFIG = {
-    #     'host': 'rm-bp1nb947ry26p25k46o.mysql.rds.aliyuncs.com',
-    #     'user': 'root',
-    #     'password': 'Zst&#$5682sc',
-    #     'database': 'crmeb'
-    # }
 
     STOP_WORDS = {'的', '了', '和', '与', '等', '是', '/个', '/箱', '/kg', '/斤', '/盒', ','# 通用无效词
     '的', '和', '是', '有', '在', '就', '及', '与', '或', '了', '嘛', '呀', '哦',
