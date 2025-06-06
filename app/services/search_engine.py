@@ -63,7 +63,7 @@ class ProductSearchEngine:
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         try:
-            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,S.keyword,Z.zone_rule_id FROM `eb_store_spu` `S` LEFT JOIN `eb_store_product` `P` ON `S`.`product_id` = `P`.`product_id` LEFT JOIN `eb_store_product_zone` `Z` ON `S`.`product_id` = `Z`.`product_id` WHERE `P`.`mer_id` = '1' AND `P`.`is_gift_bag` = '0' AND `S`.`product_type` <> '20' AND `mer_status` = '1' AND `S`.`status` = '1' AND `P`.`is_select` = '1' order by  S.sort")
+            cursor.execute("SELECT S.spu_id,S.product_id,S.store_name,S.keyword")
             products = cursor.fetchall()
 
             # 清空现有索引
@@ -417,8 +417,8 @@ class ProductSearchEngine:
         paginated_results = filtered_results[start:end]
 
         # 获取最终的spu_id列表
-        products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
-        # products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
+        #products = [self.products[pid]['spu_id'] for pid, score in paginated_results]
+        products = [[self.products[pid]['spu_id'],score,self.products[pid]['store_name']] for pid, score in paginated_results]
 
         return products, len(filtered_results)
 
