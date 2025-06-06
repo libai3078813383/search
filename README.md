@@ -5,7 +5,7 @@
 本人不是后端专业开发 此项目为临时使用 很多地方可以做配置化，可自行修改 如技术问题请自行优化 勿喷
 操作步骤
 1. 将根目录下的 synonyms.sql 文件导入进去  
-2. 修改app\services\search_engine.py 文件中的第66行代码  此处为你的 sql查询  查询结果 要包含 store_name(商品名称) keyword （关键词或者分类标签）  注：此处可做优化  根据自己需求来
+2. 修改app\services\search_engine.py 文件中的第66行代码  此处为你的 sql查询  查询结果 要包含 store_name(商品名称) keyword （关键词或者分类标签） spuid(商品id ) zone_rule_id（专区id）后边两个根据业务需求自行调整 自行修改search 方法中return的数据格式 注：此处可做优化  根据自己需求来
 3. 修改config文件的 数据连接配置  
 4. 然后直接run文件运行就行了
 第二步运行的结构要包含这两列数据
